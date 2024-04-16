@@ -1,12 +1,21 @@
-use std::fs;
+use routrs::{Geolocalizable, HIGHWAYS};
 
-use routrs::geograph::json;
 fn main() {
-    let marnet_json_data = fs::read_to_string(format!("data/{}.json", "marnet"))
-        .expect("Failed to read file data/marnet.json");
+    println!("Marnet: {:#?} nodes", routrs::MARNET.len());
+    println!("Highways {:#?} nodes", routrs::HIGHWAYS.len());
+    println!("Railways {:#?} nodes", routrs::RAILWAYS.len());
 
-    let marnet_json: json::JsonGeograph =
-        serde_json::from_str(&marnet_json_data).expect("Failed to parse JSON");
+    let total_highway_distance: f64 = routrs::HIGHWAYS
+        .nodes()
+        .map(|node| {
+            let destination_id = *node.waypoints.first().unwrap_or(&node.id);
+            let destination = HIGHWAYS.get(destination_id).expect("error");
+            node.haversine(destination)
+        })
+        .sum();
 
-    println!("{:#?}", marnet_json);
+    println!(
+        "avg_highway_distance {:#?} km",
+        total_highway_distance / routrs::HIGHWAYS.len() as f64
+    );
 }

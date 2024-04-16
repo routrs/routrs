@@ -18,10 +18,10 @@ pub trait Geolocalizable {
         self.geoloc().1
     }
 
-    fn simple_manhattan(&self, destination: &Self) -> f64 {
+    fn rad_manhattan(&self, destination: &Self) -> f64 {
         let (lat1, lng1) = self.geoloc();
         let (lat2, lng2) = destination.geoloc();
-        (lat1 - lat2).abs() + (lng1 - lng2).abs()
+        (lat1 - lat2).to_radians().abs() + (lng1 - lng2).to_radians().abs()
     }
 
     fn haversine(&self, destination: &Self) -> f64 {
@@ -57,10 +57,14 @@ mod tests {
 
     #[test]
     fn test_manhattan_distance() {
-        let a = GeolocMock { geoloc: (1.0, 2.0) };
-        let b = GeolocMock { geoloc: (3.0, 4.0) };
+        let a = GeolocMock {
+            geoloc: (0.0, 90.0),
+        };
+        let b = GeolocMock {
+            geoloc: (-90.0, 270.0),
+        };
 
-        assert_eq!(a.simple_manhattan(&b), 4.0);
+        assert_eq!(a.rad_manhattan(&b), 4.71238898038469);
     }
 
     #[test]

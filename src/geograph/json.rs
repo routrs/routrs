@@ -1,12 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::{Node, NodeId};
-
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct JsonGeograph {
-    pub geograph: String,
-    pub nodes: Vec<JsonNode>,
-}
+use super::{Geograph, Node, NodeId};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsonNode {
@@ -22,6 +16,22 @@ impl From<JsonNode> for Node {
             (node.coordinates[0], node.coordinates[1]),
             node.waypoints,
         )
+    }
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone)]
+pub struct JsonGeograph {
+    pub geograph: String,
+    pub nodes: Vec<JsonNode>,
+}
+
+impl From<JsonGeograph> for Geograph {
+    fn from(json_geograph: JsonGeograph) -> Geograph {
+        let mut geograph = Geograph::new(&json_geograph.geograph);
+        for json_node in json_geograph.nodes {
+            geograph.add(json_node.into());
+        }
+        geograph
     }
 }
 
