@@ -1,7 +1,8 @@
 pub mod geoloc;
 pub mod json;
 
-use std::collections::HashMap;
+use std::cmp::Ordering;
+use std::collections::{hash_map, HashMap};
 
 pub use geoloc::{Coord, Geoloc, Geolocalizable, Lat, Lng};
 
@@ -49,6 +50,14 @@ impl Geograph {
         }
     }
 
+    pub fn closest(&self, loc: &impl Geolocalizable) -> Option<&Node> {
+        self.nodes().min_by(|a, b| {
+            a.haversine(loc)
+                .partial_cmp(&b.haversine(loc))
+                .unwrap_or(Ordering::Equal)
+        })
+    }
+
     pub fn add(&mut self, node: Node) -> &mut Self {
         self.graph.insert(node.id, node);
         self
@@ -58,7 +67,7 @@ impl Geograph {
         self.graph.get(&id)
     }
 
-    pub fn nodes(&self) -> impl Iterator<Item = &Node> {
+    pub fn nodes(&self) -> hash_map::Values<'_, NodeId, Node> {
         self.graph.values()
     }
 
@@ -77,9 +86,9 @@ mod tests {
     use super::*;
 
     fn geograph_fixture() -> Geograph {
-        let node1 = Node::new(1, (0.0, 0.0), vec![2, 3]);
-        let node2 = Node::new(2, (1.0, 1.0), vec![1]);
-        let node3 = Node::new(3, (2.0, 2.0), vec![1]);
+        let node1 = Node::new(0, (0.0, 0.0), vec![2, 3]);
+        let node2 = Node::new(1, (1.0, 1.0), vec![1]);
+        let node3 = Node::new(2, (2.0, 2.0), vec![1]);
 
         let mut geograph = Geograph::new("Test Geograph");
         geograph.add(node1).add(node2).add(node3);
@@ -117,5 +126,16 @@ mod tests {
         let nodes: Vec<&Node> = geograph.nodes().collect();
 
         assert_eq!(nodes.len(), 3);
+    }
+
+    #[test]
+    fn test_closest() {
+        let geograph = geograph_fixture();
+        let origin = geograph.get(0).unwrap();
+        let very_close_to_origin = Node::new(4, (0.01, 0.01), vec![1]);
+
+        let closest = geograph.closest(&very_close_to_origin).unwrap();
+
+        assert_eq!(closest.id, origin.id);
     }
 }

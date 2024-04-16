@@ -1,4 +1,4 @@
-use routrs::Geolocalizable;
+use routrs::prelude::*;
 
 use routrs_highways::HIGHWAYS;
 
@@ -18,4 +18,7 @@ fn main() {
         "avg_highway_distance {:#?} km",
         total_highway_distance / HIGHWAYS.len() as f64
     );
+    let some_loc = (179.5, 51.3);
+    let closest = HIGHWAYS.closest(&some_loc);
+    println!("closest {:?}", closest);
 }
