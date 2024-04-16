@@ -43,16 +43,15 @@ mod test {
 
     #[test]
     fn it_converts_into_geograph_node() {
-        let node = JsonNode {
+        let json_node = JsonNode {
             id: 0,
             coordinates: vec![179.5, 51.3],
             waypoints: vec![1, 3684, 5945, 5257, 10859, 3512, 6947, 8385, 2446, 2222],
         };
-        let geograph_node: Node = node.clone().into();
+        let node: Node = json_node.clone().into();
 
-        assert_eq!(geograph_node.id, 0);
-        assert_eq!(geograph_node.lat(), *node.coordinates.first().unwrap());
-        assert_eq!(geograph_node.lng(), *node.coordinates.last().unwrap());
-        assert_eq!(geograph_node.waypoints, node.waypoints);
+        assert_eq!(node.id, 0);
+        assert_eq!(vec![node.lat(), node.lng()], *json_node.coordinates);
+        assert_eq!(node.waypoints, json_node.waypoints);
     }
 }
