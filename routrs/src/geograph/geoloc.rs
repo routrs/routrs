@@ -41,6 +41,12 @@ pub trait Geolocalizable {
     }
 }
 
+impl Geolocalizable for Geoloc {
+    fn geoloc(&self) -> Geoloc {
+        *self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
