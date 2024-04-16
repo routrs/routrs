@@ -1,0 +1,15 @@
+[package]
+name = "routrs_highways"
+version = "0.1.0"
+edition = "2021"
+description = "Highway extension for routrs, the Rust geograph-based shortest distance calculator"
+license = "MIT"
+repository = "https://github.com/deepbludev/routrs"
+documentation = "https://github.com/deepbludev/routrs"
+
+[dependencies]
+flate2 = "1.0.28"
+lazy_static = "1.4.0"
+serde = { version = "1.0.197", features = ["derive"] }
+serde_json = "1.0.116"
+routrs = { version = "0.1.0", path = "../routrs" }
