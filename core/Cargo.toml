@@ -3,6 +3,10 @@ name = "routrs"
 version = "0.1.0"
 edition = "2021"
 description = "Geograph-based shortest searoute distance calculation for Rust"
+license = "MIT"
+repository = "https://github.com/deepbludev/routrs"
+documentation = "https://github.com/deepbludev/routrs"
+
 
 [dependencies]
 flate2 = "1.0.28"
