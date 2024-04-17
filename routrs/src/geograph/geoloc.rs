@@ -1,16 +1,19 @@
-/// Alias for a coordinate value.
+const EARTH_RADIUS_KM: f64 = 6_371.0;
+const KM_PER_DEGREE_LAT: f64 = 111.0; // Roughly 111 km per degree of latitude
+
+/// Calculate the distance in kilometers for one degree of longitude at a given latitude
+fn km_per_degree_lng(lat: f64) -> f64 {
+    (EARTH_RADIUS_KM * (lat.to_radians().cos() * 2.0 * std::f64::consts::PI / 360.0)).abs()
+}
+
 pub type Coord = f64;
-/// Alias for a latitude value.
 pub type Lat = Coord;
-/// Alias for a longitude value.
 pub type Lng = Coord;
 /// Represents a geographic location with latitude and longitude coordinates.
 pub type Geoloc = (Lat, Lng);
 
-static EARTH_RADIUS_KM: f64 = 6_371.0;
 pub trait Geolocalizable {
     fn geoloc(&self) -> Geoloc;
-
     fn lat(&self) -> Lat {
         self.geoloc().0
     }
@@ -18,6 +21,16 @@ pub trait Geolocalizable {
         self.geoloc().1
     }
 
+    /// Calculate the Manhattan distance between two geographic coordinates
+    fn manhattan(&self, destination: &impl Geolocalizable) -> f64 {
+        let lat_distance = (destination.lat() - self.lat()).abs() * KM_PER_DEGREE_LAT;
+        let mid_lat = (self.lat() + destination.lat()) / 2.0;
+        let lng_distance = (destination.lng() - self.lng()).abs() * km_per_degree_lng(mid_lat);
+
+        lat_distance + lng_distance
+    }
+
+    /// Calculate the Haversine distance between two geographic coordinates
     fn haversine(&self, destination: &impl Geolocalizable) -> f64 {
         let lat1 = self.lat().to_radians();
         let lng1 = self.lng().to_radians();
@@ -31,6 +44,7 @@ pub trait Geolocalizable {
         let a = sin_half_d_lat * sin_half_d_lat
             + lat1.cos() * lat2.cos() * sin_half_d_lng * sin_half_d_lng;
         let c = 2.0 * a.sqrt().atan2((1.0 - a).sqrt());
+
         EARTH_RADIUS_KM * c
     }
 }
