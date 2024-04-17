@@ -1,24 +1,29 @@
-use routrs::prelude::*;
+use std::time::{Duration, Instant};
 
+use routrs::Geolocalizable;
 use routrs_highways::HIGHWAYS;
 
 fn main() {
-    println!("Highways {:#?} nodes", HIGHWAYS.len());
+    let mut iter = 0;
+    let mut total_time = Duration::new(0, 0);
 
-    let total_highway_distance: f64 = HIGHWAYS
-        .nodes()
-        .map(|node| {
-            let destination_id = *node.waypoints.first().unwrap_or(&node.id);
-            let destination = HIGHWAYS.get(destination_id).expect("error");
-            node.haversine(destination)
-        })
-        .sum();
+    let first_node = HIGHWAYS.get(1).unwrap();
+    for node in HIGHWAYS.nodes() {
+        iter += 1;
+        let start = Instant::now(); // Start timing
+        let (distance, path, path_type) = HIGHWAYS.distance(first_node, node).unwrap();
+        let duration = start.elapsed();
+        total_time += duration;
+        let avg_time = total_time / iter;
 
-    println!(
-        "avg_highway_distance {:#?} km",
-        total_highway_distance / HIGHWAYS.len() as f64
-    );
-    let some_loc = (179.5, 51.3);
-    let closest = HIGHWAYS.closest(&some_loc);
-    println!("closest {:?}", closest);
+        println!(
+            "{:?}\t{:?}\t{:?}\t\tdistance: {:?} km ({:?} nodes) {:?}",
+            avg_time,
+            first_node.geoloc(),
+            node.geoloc(),
+            distance,
+            path.len(),
+            path_type
+        );
+    }
 }

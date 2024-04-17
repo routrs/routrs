@@ -1,10 +1,33 @@
 pub mod geoloc;
 pub mod json;
 
-use std::cmp::Ordering;
-use std::collections::{hash_map, HashMap};
+use std::cmp::{Ordering, Reverse};
+use std::collections::{hash_map, BinaryHeap, HashMap};
 
 pub use geoloc::{Coord, Geoloc, Geolocalizable, Lat, Lng};
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub struct Distance(f64);
+
+impl PartialOrd for Distance {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Eq for Distance {}
+
+impl Ord for Distance {
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.0.partial_cmp(&other.0).unwrap()
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub enum PathType {
+    Direct,
+    ViaNodes,
+}
 
 /// Represents a unique identifier for a node.
 pub type NodeId = i32;
@@ -50,12 +73,90 @@ impl Geograph {
         }
     }
 
-    pub fn closest(&self, loc: &impl Geolocalizable) -> Option<&Node> {
+    /// Checks if the graph is connected.
+    pub fn is_connected(&self) -> bool {
+        if self.graph.is_empty() {
+            return false; // An empty graph is technically not connected.
+        }
+
+        let start_node_id = *self.graph.keys().next().unwrap(); // Get the first node's id.
+        let mut visited = HashMap::new();
+        let mut stack = vec![start_node_id];
+
+        while let Some(node_id) = stack.pop() {
+            if let std::collections::hash_map::Entry::Vacant(e) = visited.entry(node_id) {
+                e.insert(true); // Mark this node as visited
+                if let Some(node) = self.graph.get(&node_id) {
+                    for &neighbor_id in &node.waypoints {
+                        if !visited.contains_key(&neighbor_id) {
+                            stack.push(neighbor_id);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Check if we have visited all nodes
+        visited.len() == self.graph.len()
+    }
+
+    /// Finds the closest node in the geograph to the given location.
+    /// Used to find the entry and exit points for the shortest path calculation.
+    fn closest(&self, loc: &impl Geolocalizable) -> Option<&Node> {
         self.nodes().min_by(|a, b| {
             a.haversine(loc)
                 .partial_cmp(&b.haversine(loc))
                 .unwrap_or(Ordering::Equal)
         })
+    }
+
+    /// Calculates the distance between two geolocations within the geograph
+    /// using Dijsktra's algorithm and the Haversine formula.
+    ///
+    /// It first finds the closest nodes to the origin and destination, then
+    /// runs Dijkstra's algorithm on the graph to find the shortest path
+    /// between the two closest nodes.
+    ///
+    /// In case the destination is not reachable from the origin, it will
+    /// calculate the direct Haversine distance betweeen the locations.
+    ///
+    /// It returns a tuple with:
+    /// - Total distance traveled
+    /// - List of geolocations along the path
+    /// - PathType indicating if it was a direct path or went through nodes
+    ///
+    pub fn distance(
+        &self,
+        from: &impl Geolocalizable,
+        to: &impl Geolocalizable,
+    ) -> Result<(f64, Vec<Geoloc>, PathType), String> {
+        let closest_from = self.closest(from).ok_or("Origin not found")?;
+        let closest_to = self.closest(to).ok_or("Destination not found")?;
+
+        match self.dijsktra_shortest_path(closest_from.id, closest_to.id) {
+            None => Ok((
+                from.haversine(to),
+                vec![from.geoloc(), to.geoloc()],
+                PathType::Direct,
+            )),
+            Some(node_ids) => {
+                let mut distance = from.haversine(closest_from);
+                let mut path = vec![from.geoloc()];
+                let nodes = node_ids
+                    .iter()
+                    .map(|id| self.get(*id).ok_or("Node not found"))
+                    .collect::<Result<Vec<_>, _>>()?;
+
+                for (current_node, next_node) in nodes.iter().zip(nodes.iter().skip(1)) {
+                    distance += current_node.haversine(*next_node);
+                    path.push(current_node.geoloc());
+                }
+
+                distance += closest_to.haversine(to);
+                path.push(to.geoloc());
+                Ok((distance, path, PathType::ViaNodes))
+            }
+        }
     }
 
     pub fn add(&mut self, node: Node) -> &mut Self {
@@ -79,6 +180,65 @@ impl Geograph {
     pub fn is_empty(&self) -> bool {
         self.len() == 0
     }
+
+    /// Determines the shortest path between two nodes in the geograph
+    /// using Dijsktra's algorithm and the Haversine formula.
+    fn dijsktra_shortest_path(&self, from: NodeId, to: NodeId) -> Option<Vec<NodeId>> {
+        let mut queue = BinaryHeap::new();
+        let mut distances: HashMap<NodeId, Distance> = HashMap::new();
+        let mut previous: HashMap<NodeId, NodeId> = HashMap::new();
+
+        // Initialize distances and queue
+        self.graph.keys().for_each(|&node_id| {
+            let distance = if node_id == from {
+                Distance(0.0)
+            } else {
+                Distance(f64::INFINITY)
+            };
+            distances.insert(node_id, distance);
+            queue.push(Reverse((distance, node_id)));
+        });
+
+        while let Some(Reverse((Distance(dist), current))) = queue.pop() {
+            // Early exit if the destination node is reached
+            if current == to {
+                let mut path = Vec::new();
+                let mut step = to;
+                while step != from {
+                    if let Some(&prev) = previous.get(&step) {
+                        path.push(step);
+                        step = prev;
+                    } else {
+                        return None; // No path found
+                    }
+                }
+                path.push(from);
+                path.reverse();
+                return Some(path);
+            }
+
+            // Process each neighbor
+            if let Some(node) = self.graph.get(&current) {
+                for &neighbor_id in &node.waypoints {
+                    let neighbor = self.get(neighbor_id).expect("Missing neighbor");
+                    let additional_distance = node.haversine(neighbor);
+                    let total_distance = Distance(dist + additional_distance);
+
+                    if total_distance
+                        < *distances
+                            .get(&neighbor_id)
+                            .unwrap_or(&Distance(f64::INFINITY))
+                    {
+                        distances.insert(neighbor_id, total_distance);
+                        previous.insert(neighbor_id, current);
+                        queue.push(Reverse((total_distance, neighbor_id)));
+                    }
+                }
+            }
+        }
+
+        None // If no path is found
+    }
 }
 
 #[cfg(test)]
@@ -86,20 +246,24 @@ mod tests {
     use super::*;
 
     fn geograph_fixture() -> Geograph {
-        let node1 = Node::new(0, (0.0, 0.0), vec![2, 3]);
-        let node2 = Node::new(1, (1.0, 1.0), vec![1]);
-        let node3 = Node::new(2, (2.0, 2.0), vec![1]);
-
         let mut geograph = Geograph::new("Test Geograph");
-        geograph.add(node1).add(node2).add(node3);
+        geograph
+            .add(Node::new(0, (0.0, 0.0), vec![1]))
+            .add(Node::new(1, (1.0, 1.0), vec![0, 2, 3, 4]))
+            .add(Node::new(2, (2.0, 2.0), vec![1, 3, 5]))
+            .add(Node::new(3, (3.0, 3.0), vec![1, 2, 3, 4, 5]))
+            .add(Node::new(4, (4.0, 4.0), vec![1, 3, 4, 5]))
+            .add(Node::new(5, (5.0, 5.0), vec![3, 4]));
+
         geograph
     }
 
     #[test]
     fn test_add() {
-        let geograph = geograph_fixture();
+        let mut geograph = geograph_fixture();
+        geograph.add(Node::new(6, (6.0, 6.0), vec![]));
 
-        assert_eq!(geograph.len(), 3);
+        assert_eq!(geograph.len(), 7);
         assert!(!geograph.is_empty());
     }
 
@@ -115,7 +279,7 @@ mod tests {
     #[test]
     fn test_get_non_existent_node() {
         let geograph = geograph_fixture();
-        let non_existent_node = geograph.get(4);
+        let non_existent_node = geograph.get(100);
 
         assert!(non_existent_node.is_none());
     }
@@ -125,17 +289,43 @@ mod tests {
         let geograph = geograph_fixture();
         let nodes: Vec<&Node> = geograph.nodes().collect();
 
-        assert_eq!(nodes.len(), 3);
+        assert_eq!(nodes.len(), 6);
+    }
+
+    #[test]
+    fn test_is_connected() {
+        let mut geograph = geograph_fixture();
+        assert!(geograph.is_connected());
+
+        geograph.add(Node::new(6, (6.0, 6.0), vec![3, 4]));
+        assert!(!geograph.is_connected());
     }
 
     #[test]
     fn test_closest() {
         let geograph = geograph_fixture();
         let origin = geograph.get(0).unwrap();
-        let very_close_to_origin = Node::new(4, (0.01, 0.01), vec![1]);
+        let very_close_to_origin = Node::new(6, (0.01, 0.01), vec![1]);
 
         let closest = geograph.closest(&very_close_to_origin).unwrap();
 
         assert_eq!(closest.id, origin.id);
+    }
+
+    #[test]
+    fn test_shortest_path() {
+        let geograph = geograph_fixture();
+
+        let path = geograph.dijsktra_shortest_path(0, 5).unwrap();
+        assert_eq!(path, vec![0, 1, 2, 5]);
+
+        let path = geograph.dijsktra_shortest_path(2, 0).unwrap();
+        assert_eq!(path, vec![2, 1, 0]);
+
+        let path = geograph.dijsktra_shortest_path(4, 0).unwrap();
+        assert_eq!(path, vec![4, 1, 0]);
+
+        let path = geograph.dijsktra_shortest_path(5, 0).unwrap();
+        assert_eq!(path, vec![5, 4, 1, 0]);
     }
 }

@@ -1,10 +1,4 @@
 const EARTH_RADIUS_KM: f64 = 6_371.0;
-const KM_PER_DEGREE_LAT: f64 = 111.0; // Roughly 111 km per degree of latitude
-
-/// Calculate the distance in kilometers for one degree of longitude at a given latitude
-fn km_per_degree_lng(lat: f64) -> f64 {
-    (EARTH_RADIUS_KM * (lat.to_radians().cos() * 2.0 * std::f64::consts::PI / 360.0)).abs()
-}
 
 pub type Coord = f64;
 pub type Lat = Coord;
@@ -19,15 +13,6 @@ pub trait Geolocalizable {
     }
     fn lng(&self) -> Lng {
         self.geoloc().1
-    }
-
-    /// Calculate the Manhattan distance between two geographic coordinates
-    fn manhattan(&self, destination: &impl Geolocalizable) -> f64 {
-        let lat_distance = (destination.lat() - self.lat()).abs() * KM_PER_DEGREE_LAT;
-        let mid_lat = (self.lat() + destination.lat()) / 2.0;
-        let lng_distance = (destination.lng() - self.lng()).abs() * km_per_degree_lng(mid_lat);
-
-        lat_distance + lng_distance
     }
 
     /// Calculate the Haversine distance between two geographic coordinates
