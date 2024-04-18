@@ -18,6 +18,6 @@ fn it_calculates_distance() {
     let (distance, path, path_type) = MARITIME.distance(&from, &to).unwrap();
 
     assert_eq!(distance, 9224.95741604269);
-    assert_eq!(path.len(), 117);
-    assert_eq!(path_type, PathType::ViaNodes);
+    assert_eq!(path.len(), 118);
+    assert_eq!(path_type, PathType::ViaWaypoints);
 }

@@ -40,25 +40,88 @@ impl Geolocalizable for Geoloc {
     }
 }
 
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub struct Distance(pub f64);
+// Allow accessing elements like a Vec
+impl std::ops::Deref for Distance {
+    type Target = f64;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+// Allow modifying elements like a Vec
+impl std::ops::DerefMut for Distance {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl Eq for Distance {}
+impl PartialOrd for Distance {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+impl Ord for Distance {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.0.partial_cmp(&other.0).unwrap()
+    }
+}
+
+#[derive(Debug)]
+pub struct Path<T: Geolocalizable>(Vec<T>);
+
+// Allow accessing elements like a Vec
+impl<T: Geolocalizable> std::ops::Deref for Path<T> {
+    type Target = Vec<T>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+// Allow modifying elements like a Vec
+impl<T: Geolocalizable> std::ops::DerefMut for Path<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+impl<T: Geolocalizable> From<Vec<T>> for Path<T> {
+    fn from(v: Vec<T>) -> Self {
+        Self(v)
+    }
+}
+
+impl<T: Geolocalizable> Path<T> {
+    pub fn length(&self) -> f64 {
+        self.iter()
+            .zip(self.iter().skip(1))
+            .map(|(node, next)| node.haversine(next))
+            .sum()
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    struct GeolocMock {
-        geoloc: Geoloc,
-    }
-
-    impl Geolocalizable for GeolocMock {
-        fn geoloc(&self) -> Geoloc {
-            self.geoloc
+    mod geolocalizable {
+        use super::*;
+        struct GeolocMock {
+            geoloc: Geoloc,
         }
-    }
 
-    #[test]
-    fn test_haversine_distance() {
-        let a = GeolocMock { geoloc: (1.0, 2.0) };
-        let b = GeolocMock { geoloc: (3.0, 4.0) };
+        impl Geolocalizable for GeolocMock {
+            fn geoloc(&self) -> Geoloc {
+                self.geoloc
+            }
+        }
 
-        assert_eq!(a.haversine(&b), 314.4029510236249);
+        #[test]
+        fn test_haversine_distance() {
+            let a = GeolocMock { geoloc: (1.0, 2.0) };
+            let b = GeolocMock { geoloc: (3.0, 4.0) };
+
+            assert_eq!(a.haversine(&b), 314.4029510236249);
+        }
     }
 }

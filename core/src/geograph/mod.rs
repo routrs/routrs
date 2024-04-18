@@ -3,30 +3,14 @@ pub mod json;
 
 use std::cmp::{Ordering, Reverse};
 use std::collections::{hash_map, BinaryHeap, HashMap};
+use std::iter;
 
-pub use geoloc::{Coord, Geoloc, Geolocalizable, Lat, Lng};
-
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub struct Distance(f64);
-
-impl PartialOrd for Distance {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-impl Eq for Distance {}
-
-impl Ord for Distance {
-    fn cmp(&self, other: &Self) -> Ordering {
-        self.0.partial_cmp(&other.0).unwrap()
-    }
-}
+pub use geoloc::{Coord, Distance, Geoloc, Geolocalizable, Lat, Lng, Path};
 
 #[derive(Debug, PartialEq)]
 pub enum PathType {
     Direct,
-    ViaNodes,
+    ViaWaypoints,
 }
 
 /// Represents a unique identifier for a node.
@@ -129,7 +113,7 @@ impl Geograph {
         &self,
         origin: &impl Geolocalizable,
         destination: &impl Geolocalizable,
-    ) -> Result<(f64, Vec<Geoloc>, PathType), String> {
+    ) -> Result<(f64, Path<Geoloc>, PathType), String> {
         let not_found = "No closest node found";
         let origin_closest = self.closest(origin).ok_or(not_found)?;
         let destination_closest = self.closest(destination).ok_or(not_found)?;
@@ -137,25 +121,20 @@ impl Geograph {
         match self.dijsktra_shortest_path(origin_closest.id, destination_closest.id) {
             None => Ok((
                 origin.haversine(destination),
-                vec![origin.geoloc(), destination.geoloc()],
+                vec![origin.geoloc(), destination.geoloc()].into(),
                 PathType::Direct,
             )),
-            Some(node_ids) => {
-                let mut distance = origin.haversine(origin_closest);
-                let mut path = vec![origin.geoloc()];
-                let nodes = node_ids
-                    .iter()
-                    .map(|id| self.get(*id).ok_or("Node not found"))
-                    .collect::<Result<Vec<_>, _>>()?;
+            Some(path) => {
+                let path: Path<Geoloc> = iter::once(origin.geoloc())
+                    .chain(
+                        path.iter()
+                            .filter_map(|id| self.get(*id).map(|node| node.geoloc())),
+                    )
+                    .chain(iter::once(destination.geoloc()))
+                    .collect::<Vec<_>>()
+                    .into();
 
-                for (node, next) in nodes.iter().zip(nodes.iter().skip(1)) {
-                    distance += node.haversine(*next);
-                    path.push(node.geoloc());
-                }
-
-                distance += destination_closest.haversine(destination);
-                path.push(destination.geoloc());
-                Ok((distance, path, PathType::ViaNodes))
+                Ok((path.length(), path, PathType::ViaWaypoints))
             }
         }
     }
@@ -225,11 +204,11 @@ impl Geograph {
                     let additional_distance = node.haversine(neighbor);
                     let total_distance = Distance(dist + additional_distance);
 
-                    if total_distance
-                        < *distances
-                            .get(&neighbor_id)
-                            .unwrap_or(&Distance(f64::INFINITY))
-                    {
+                    let neighbor_distance = *distances
+                        .get(&neighbor_id)
+                        .unwrap_or(&Distance(f64::INFINITY));
+
+                    if total_distance < neighbor_distance {
                         distances.insert(neighbor_id, total_distance);
                         previous.insert(neighbor_id, current);
                         queue.push(Reverse((total_distance, neighbor_id)));
