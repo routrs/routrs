@@ -127,33 +127,34 @@ impl Geograph {
     ///
     pub fn distance(
         &self,
-        from: &impl Geolocalizable,
-        to: &impl Geolocalizable,
+        origin: &impl Geolocalizable,
+        destination: &impl Geolocalizable,
     ) -> Result<(f64, Vec<Geoloc>, PathType), String> {
-        let closest_from = self.closest(from).ok_or("Origin not found")?;
-        let closest_to = self.closest(to).ok_or("Destination not found")?;
+        let not_found = "No closest node found";
+        let origin_closest = self.closest(origin).ok_or(not_found)?;
+        let destination_closest = self.closest(destination).ok_or(not_found)?;
 
-        match self.dijsktra_shortest_path(closest_from.id, closest_to.id) {
+        match self.dijsktra_shortest_path(origin_closest.id, destination_closest.id) {
             None => Ok((
-                from.haversine(to),
-                vec![from.geoloc(), to.geoloc()],
+                origin.haversine(destination),
+                vec![origin.geoloc(), destination.geoloc()],
                 PathType::Direct,
             )),
             Some(node_ids) => {
-                let mut distance = from.haversine(closest_from);
-                let mut path = vec![from.geoloc()];
+                let mut distance = origin.haversine(origin_closest);
+                let mut path = vec![origin.geoloc()];
                 let nodes = node_ids
                     .iter()
                     .map(|id| self.get(*id).ok_or("Node not found"))
                     .collect::<Result<Vec<_>, _>>()?;
 
-                for (current_node, next_node) in nodes.iter().zip(nodes.iter().skip(1)) {
-                    distance += current_node.haversine(*next_node);
-                    path.push(current_node.geoloc());
+                for (node, next) in nodes.iter().zip(nodes.iter().skip(1)) {
+                    distance += node.haversine(*next);
+                    path.push(node.geoloc());
                 }
 
-                distance += closest_to.haversine(to);
-                path.push(to.geoloc());
+                distance += destination_closest.haversine(destination);
+                path.push(destination.geoloc());
                 Ok((distance, path, PathType::ViaNodes))
             }
         }
