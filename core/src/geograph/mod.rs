@@ -163,14 +163,14 @@ impl Geograph {
 
     /// Determines the shortest path between two nodes in the geograph
     /// using Dijsktra's algorithm and the Haversine formula.
-    fn dijsktra_shortest_path(&self, from: NodeId, to: NodeId) -> Option<Vec<NodeId>> {
+    fn dijsktra_shortest_path(&self, origin: NodeId, destination: NodeId) -> Option<Vec<NodeId>> {
         let mut queue = BinaryHeap::new();
         let mut distances: HashMap<NodeId, Distance> = HashMap::new();
         let mut previous: HashMap<NodeId, NodeId> = HashMap::new();
 
         // Initialize distances and queue
         self.graph.keys().for_each(|&node_id| {
-            let distance = if node_id == from {
+            let distance = if node_id == origin {
                 Distance(0.0)
             } else {
                 Distance(f64::INFINITY)
@@ -181,10 +181,10 @@ impl Geograph {
 
         while let Some(Reverse((Distance(dist), current))) = queue.pop() {
             // Early exit if the destination node is reached
-            if current == to {
+            if current == destination {
                 let mut path = Vec::new();
-                let mut step = to;
-                while step != from {
+                let mut step = destination;
+                while step != origin {
                     if let Some(&prev) = previous.get(&step) {
                         path.push(step);
                         step = prev;
@@ -192,7 +192,7 @@ impl Geograph {
                         return None; // No path found
                     }
                 }
-                path.push(from);
+                path.push(origin);
                 path.reverse();
                 return Some(path);
             }
