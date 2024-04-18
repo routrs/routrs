@@ -42,21 +42,6 @@ impl Geolocalizable for Geoloc {
 
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct Distance(pub f64);
-// Allow accessing elements like a Vec
-impl std::ops::Deref for Distance {
-    type Target = f64;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-// Allow modifying elements like a Vec
-impl std::ops::DerefMut for Distance {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
 
 impl Eq for Distance {}
 impl PartialOrd for Distance {

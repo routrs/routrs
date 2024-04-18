@@ -49,6 +49,8 @@ pub struct Geograph {
     graph: HashMap<NodeId, Node>,
 }
 
+pub type DistanceResult = Result<(f64, Path<Geoloc>, PathType), String>;
+
 impl Geograph {
     pub fn new(name: &str) -> Self {
         Self {
@@ -113,7 +115,7 @@ impl Geograph {
         &self,
         origin: &impl Geolocalizable,
         destination: &impl Geolocalizable,
-    ) -> Result<(f64, Path<Geoloc>, PathType), String> {
+    ) -> DistanceResult {
         let not_found = "No closest node found";
         let origin_closest = self.closest(origin).ok_or(not_found)?;
         let destination_closest = self.closest(destination).ok_or(not_found)?;

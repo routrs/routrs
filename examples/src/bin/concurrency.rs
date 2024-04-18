@@ -1,26 +1,27 @@
-use rayon::prelude::*;
 use std::time::Instant;
 
+use routrs::concurrency::*;
 use routrs::prelude::*;
 use routrs::MARITIME;
 
 fn main() {
-    let nodes: Vec<&Node> = MARITIME.nodes().take(100).collect();
-    let others: Vec<&Node> = nodes.iter().rev().cloned().take(20).collect();
+    let legs: Vec<Leg<Geoloc>> = MARITIME
+        .nodes()
+        .take(100)
+        .flat_map(|node| {
+            MARITIME
+                .nodes()
+                .take(20)
+                .map(|other| Leg((node.geoloc(), other.geoloc())))
+        })
+        .collect();
 
-    let start = Instant::now(); // Start timing
-    nodes.par_iter().for_each(|node| {
-        let distance: f64 = others
-            .iter()
-            .map(|other| {
-                MARITIME
-                    .distance(*node, *other)
-                    .map(|(distance, _, _)| distance)
-                    .unwrap_or(0.0)
-            })
-            .sum();
+    let start = Instant::now();
+    println!("start: {:?} distances", legs.len());
 
-        println!("{:?}\tdistance: {:?} km ", node.geoloc(), distance,);
-    });
-    println!("duration: {:?}", start.elapsed())
+    let results = MARITIME.par_distance(&legs);
+
+    let duration = start.elapsed();
+    println!("total: {:?}", duration);
+    println!("avg: {:?}", duration.div_f64(results.len() as f64))
 }
