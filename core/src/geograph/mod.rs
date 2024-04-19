@@ -20,7 +20,7 @@ pub type NodeId = i32;
 /// Implements the `Geolocalizable` trait.
 /// It has an identifiier and geographic location, as well as
 /// references to the connected nodes or waypoints.
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Node {
     pub id: NodeId,
     pub waypoints: Vec<NodeId>,
@@ -141,13 +141,17 @@ impl Geograph {
         }
     }
 
-    pub fn add(&mut self, node: Node) -> &mut Self {
+    fn add(&mut self, node: Node) -> &mut Self {
         self.graph.insert(node.id, node);
         self
     }
 
     pub fn get(&self, id: NodeId) -> Option<&Node> {
         self.graph.get(&id)
+    }
+
+    pub fn get_copy(&self, id: NodeId) -> Option<Node> {
+        self.graph.get(&id).cloned()
     }
 
     pub fn nodes(&self) -> hash_map::Values<'_, NodeId, Node> {
