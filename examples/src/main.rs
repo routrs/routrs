@@ -8,7 +8,7 @@ fn main() {
     let mut total_time = Duration::new(0, 0);
 
     let first_node = MARITIME.get(1).unwrap();
-    for node in MARITIME.nodes() {
+    for node in MARITIME.iter_nodes() {
         iter += 1;
         let start = Instant::now(); // Start timing
         let (distance, path, path_type) = MARITIME.distance(first_node, node).unwrap();

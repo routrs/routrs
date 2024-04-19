@@ -6,11 +6,11 @@ use routrs::MARITIME;
 
 fn main() {
     let legs: Vec<Leg<Geoloc>> = MARITIME
-        .nodes()
+        .iter_nodes()
         .take(100)
         .flat_map(|node| {
             MARITIME
-                .nodes()
+                .iter_nodes()
                 .take(20)
                 .map(|other| Leg((node.geoloc(), other.geoloc())))
         })

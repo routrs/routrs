@@ -3,7 +3,7 @@ use routrs::prelude::*;
 use routrs::MARITIME;
 
 fn it_reads_geograph(geograph: &Geograph) {
-    assert!(geograph.nodes().count() > 1);
+    assert!(geograph.iter_nodes().count() > 1);
 }
 
 #[test]

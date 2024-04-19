@@ -62,6 +62,6 @@ mod test {
 
         assert_eq!(node.id, 0);
         assert_eq!(vec![node.lat(), node.lng()], *json_node.coordinates);
-        assert_eq!(node.waypoints, json_node.waypoints);
+        assert_eq!(node.waypoints, json_node.waypoints.into());
     }
 }

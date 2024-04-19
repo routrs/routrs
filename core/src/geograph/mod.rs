@@ -2,8 +2,9 @@ pub mod geoloc;
 pub mod json;
 
 use std::cmp::{Ordering, Reverse};
-use std::collections::{hash_map, BinaryHeap, HashMap};
+use std::collections::{BinaryHeap, HashMap};
 use std::iter;
+use std::sync::Arc;
 
 pub use geoloc::{Coord, Distance, Geoloc, Geolocalizable, Lat, Lng, Path};
 
@@ -23,7 +24,7 @@ pub type NodeId = i32;
 #[derive(Debug, Clone)]
 pub struct Node {
     pub id: NodeId,
-    pub waypoints: Vec<NodeId>,
+    pub waypoints: Arc<[NodeId]>,
     geoloc: Geoloc,
 }
 
@@ -73,7 +74,7 @@ impl Geograph {
             if let std::collections::hash_map::Entry::Vacant(e) = visited.entry(node_id) {
                 e.insert(true); // Mark this node as visited
                 if let Some(node) = self.graph.get(&node_id) {
-                    for &neighbor_id in &node.waypoints {
+                    for &neighbor_id in node.waypoints.iter() {
                         if !visited.contains_key(&neighbor_id) {
                             stack.push(neighbor_id);
                         }
@@ -89,7 +90,7 @@ impl Geograph {
     /// Finds the closest node in the geograph to the given location.
     /// Used to find the entry and exit points for the shortest path calculation.
     fn closest(&self, loc: &impl Geolocalizable) -> Option<&Node> {
-        self.nodes().min_by(|a, b| {
+        self.iter_nodes().min_by(|a, b| {
             a.haversine(loc)
                 .partial_cmp(&b.haversine(loc))
                 .unwrap_or(Ordering::Equal)
@@ -154,7 +155,7 @@ impl Geograph {
         self.graph.get(&id).cloned()
     }
 
-    pub fn nodes(&self) -> hash_map::Values<'_, NodeId, Node> {
+    pub fn iter_nodes(&self) -> impl Iterator<Item = &Node> {
         self.graph.values()
     }
 
@@ -205,7 +206,7 @@ impl Geograph {
 
             // Process each neighbor
             if let Some(node) = self.graph.get(&current) {
-                for &neighbor_id in &node.waypoints {
+                for &neighbor_id in node.waypoints.iter() {
                     let neighbor = self.get(neighbor_id).expect("Missing neighbor");
                     let additional_distance = node.haversine(neighbor);
                     let total_distance = Distance(dist + additional_distance);
@@ -273,7 +274,7 @@ mod tests {
     #[test]
     fn test_nodes() {
         let geograph = geograph_fixture();
-        let nodes: Vec<&Node> = geograph.nodes().collect();
+        let nodes: Vec<&Node> = geograph.iter_nodes().collect();
 
         assert_eq!(nodes.len(), 6);
     }
