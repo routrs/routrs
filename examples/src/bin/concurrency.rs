@@ -2,7 +2,7 @@ use std::time::Instant;
 
 use routrs::concurrency::*;
 use routrs::prelude::*;
-use routrs::MARITIME;
+use routrs_maritime::MARITIME;
 
 fn main() {
     let legs: Vec<Leg<Geoloc>> = MARITIME

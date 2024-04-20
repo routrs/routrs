@@ -142,7 +142,7 @@ impl Geograph {
         }
     }
 
-    fn add(&mut self, node: Node) -> &mut Self {
+    pub fn add(&mut self, node: Node) -> &mut Self {
         self.graph.insert(node.id, node);
         self
     }

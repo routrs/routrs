@@ -27,10 +27,24 @@ impl<T: Geolocalizable + Send + Sync> ParallelDistanceCalculator<T> for Geograph
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::MARITIME;
+    use crate::geograph::{Geograph, Node};
+
+    fn geograph_fixture() -> Geograph {
+        let mut geograph = Geograph::new("Test Geograph");
+        geograph
+            .add(Node::new(0, (0.0, 0.0), vec![1]))
+            .add(Node::new(1, (1.0, 1.0), vec![0, 2, 3, 4]))
+            .add(Node::new(2, (2.0, 2.0), vec![1, 3, 5]))
+            .add(Node::new(3, (3.0, 3.0), vec![1, 2, 3, 4, 5]))
+            .add(Node::new(4, (4.0, 4.0), vec![1, 3, 4, 5]))
+            .add(Node::new(5, (5.0, 5.0), vec![3, 4]));
+
+        geograph
+    }
 
     #[test]
     fn it_calculates_distance() {
+        let geograph = geograph_fixture();
         let from: Geoloc = (40.6759, -74.0504); // USNYC
         let to: Geoloc = (41.0067858, 28.9732219); // TRIST
         let mut legs = Vec::new();
@@ -38,7 +52,7 @@ mod tests {
             legs.push(Leg((from, to)));
         }
 
-        let results = MARITIME.par_distance(&legs);
+        let results = geograph.par_distance(&legs);
         let first = results.first().unwrap().as_ref().unwrap();
         let (distance, path, path_type) = first;
 

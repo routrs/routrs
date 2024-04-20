@@ -1,8 +1,8 @@
 [package]
-name = "routrs_highways"
+name = "routrs_maritime"
 version = "0.1.0"
 edition = "2021"
-description = "Highway extension for routrs, the geograph-based shortest distance calculator for Rust"
+description = "Maritime extension for routrs, the geograph-based shortest distance calculator for Rust"
 license = "MIT"
 repository = "https://github.com/deepbludev/routrs"
 documentation = "https://github.com/deepbludev/routrs"

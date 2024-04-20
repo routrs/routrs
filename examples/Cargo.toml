@@ -11,4 +11,5 @@ documentation = "https://github.com/deepbludev/routrs"
 routrs = { version = "0.1.0", path = "../core" }
 routrs_highways = { version = "0.1.0", path = "../highways" }
 routrs_railways = { version = "0.1.0", path = "../railways" }
+routrs_maritime = { version = "0.1.0", path = "../maritime" }
 rayon = "1.5"

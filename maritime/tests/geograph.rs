@@ -1,18 +1,13 @@
-use routrs::geograph::PathType;
 use routrs::prelude::*;
-use routrs::MARITIME;
+use routrs_maritime::MARITIME;
 
-fn it_reads_geograph(geograph: &Geograph) {
-    assert!(geograph.iter_nodes().count() > 1);
+#[test]
+fn it_reads_maritime() {
+    assert_eq!(MARITIME.iter_nodes().count(), 11062);
 }
 
 #[test]
-fn it_reads_marnet() {
-    it_reads_geograph(&MARITIME);
-}
-
-#[test]
-fn it_calculates_distance() {
+fn it_calculates_maritime_distance() {
     let from: Geoloc = (40.6759, -74.0504); // USNYC
     let to: Geoloc = (41.0067858, 28.9732219); // TRIST
     let (distance, path, path_type) = MARITIME.distance(&from, &to).unwrap();

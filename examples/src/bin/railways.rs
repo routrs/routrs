@@ -1,7 +1,6 @@
-use routrs::prelude::*;
-
 use std::time::{Duration, Instant};
 
+use routrs::prelude::*;
 use routrs_railways::RAILWAYS;
 
 fn main() {
@@ -9,7 +8,7 @@ fn main() {
     let mut total_time = Duration::new(0, 0);
 
     let first_node = RAILWAYS.get(1).unwrap();
-    for node in RAILWAYS.nodes() {
+    for node in RAILWAYS.iter_nodes() {
         iter += 1;
         let start = Instant::now(); // Start timing
         let (distance, path, path_type) = RAILWAYS.distance(first_node, node).unwrap();
