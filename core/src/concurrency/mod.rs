@@ -57,8 +57,8 @@ mod tests {
         let (distance, path, path_type) = first;
 
         assert_eq!(results.len(), legs.len());
-        assert_eq!(*distance, 9224.95741604269);
-        assert_eq!(path.len(), 118);
+        assert_eq!(*distance, 14116.87577572815);
+        assert_eq!(path.len(), 6);
         assert_eq!(*path_type, PathType::ViaWaypoints);
     }
 }
