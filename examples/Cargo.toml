@@ -9,7 +9,4 @@ documentation = "https://github.com/deepbludev/routrs"
 
 [dependencies]
 routrs = { version = "0.2.0", path = "../core" }
-routrs_highways_dataset = { version = "0.1.0", path = "../highways" }
-routrs_railways_dataset = { version = "0.1.0", path = "../railways" }
-routrs_maritime_dataset = { version = "0.1.0", path = "../maritime" }
 rayon = "1.5"
