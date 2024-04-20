@@ -1,5 +1,4 @@
 pub mod geoloc;
-pub mod json;
 
 use std::cmp::{Ordering, Reverse};
 use std::collections::{BinaryHeap, HashMap};
@@ -226,6 +225,26 @@ impl Geograph {
 
         None // If no path is found
     }
+}
+
+#[macro_export]
+macro_rules! build_geograph_mod {
+    ($geograph:expr) => {
+        lazy_static! {
+            pub static ref GEOGRAPH: Geograph = $geograph.into();
+        }
+
+        pub fn geograph() -> &'static Geograph {
+            &GEOGRAPH
+        }
+
+        pub fn distance(
+            origin: &impl Geolocalizable,
+            destination: &impl Geolocalizable,
+        ) -> DistanceResult {
+            GEOGRAPH.distance(origin, destination)
+        }
+    };
 }
 
 #[cfg(test)]

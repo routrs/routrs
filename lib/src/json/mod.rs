@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use super::{Geograph, Node, NodeId};
+use crate::geograph::{Geograph, Node, NodeId};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct JsonNode {

@@ -1,0 +1,29 @@
+[package]
+name = "routrs"
+version = "0.2.0"
+edition = "2021"
+description = "Geograph-based shortest distance calculation for Rust"
+license = "MIT"
+repository = "https://github.com/deepbludev/routrs"
+documentation = "https://github.com/deepbludev/routrs"
+
+
+[features]
+default = ["core"]
+core = []
+highways = ["routrs_highways_dataset", "json", "lazy_static", "flate2"]
+maritime = ["routrs_maritime_dataset", "json", "lazy_static", "flate2"]
+railways = ["routrs_railways_dataset", "json", "lazy_static", "flate2"]
+json = ["serde", "serde_json"]
+concurrency = ["rayon"]
+all = ["highways", "maritime", "railways", "json", "concurrency"]
+
+[dependencies]
+flate2 = { version = "1.0.28", optional = true }
+lazy_static = { version = "1.4.0", optional = true }
+rayon = { version = "1.5", optional = true }
+serde = { version = "1.0.197", features = ["derive"], optional = true }
+serde_json = { version = "1.0.116", optional = true }
+routrs_maritime_dataset = { version = "0.1.0", optional = true }
+routrs_highways_dataset = { version = "0.1.0", optional = true }
+routrs_railways_dataset = { version = "0.1.0", optional = true }

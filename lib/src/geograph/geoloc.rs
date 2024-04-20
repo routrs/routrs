@@ -1,11 +1,17 @@
 const EARTH_RADIUS_KM: f64 = 6_371.0;
 
+/// Represents a geographic coordinate.
 pub type Coord = f64;
+/// Represents a latitude coordinate.
 pub type Lat = Coord;
+/// Represents a longitude coordinate.
 pub type Lng = Coord;
+
 /// Represents a geographic location with latitude and longitude coordinates.
 pub type Geoloc = (Lat, Lng);
 
+/// A trait for types that can be geolocalized and have geographic coordinates.
+/// The haversine distance can be calculated between two geolocalizable objects.
 pub trait Geolocalizable {
     fn geoloc(&self) -> Geoloc;
     fn lat(&self) -> Lat {
@@ -55,6 +61,11 @@ impl Ord for Distance {
     }
 }
 
+/// Represents a path between two geolocalizable objects.
+/// The path is represented as a vector of geolocalizable objects.
+/// It's length can be calculated as the sum of the haversine distances between
+/// each pair of geolocalizable objects.
+/// Also, paths can be accessed and modified like a Vec.
 #[derive(Debug)]
 pub struct Path<T: Geolocalizable>(Vec<T>);
 
