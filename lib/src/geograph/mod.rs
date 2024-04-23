@@ -49,7 +49,7 @@ pub struct Geograph {
     graph: HashMap<NodeId, Node>,
 }
 
-pub type DistanceResult = Result<(f64, Path<Geoloc>, PathType), String>;
+pub type ShortestPath = (f64, Path<Geoloc>, PathType);
 
 impl Geograph {
     pub fn new(name: &str) -> Self {
@@ -115,29 +115,29 @@ impl Geograph {
         &self,
         origin: &impl Geolocalizable,
         destination: &impl Geolocalizable,
-    ) -> DistanceResult {
-        let not_found = "No closest node found";
-        let origin_closest = self.closest(origin).ok_or(not_found)?;
-        let destination_closest = self.closest(destination).ok_or(not_found)?;
+    ) -> ShortestPath {
+        let direct_path =
+            |o: Geoloc, d: Geoloc| (o.haversine(&d), Path::from(vec![o, d]), PathType::Direct);
 
-        match self.dijsktra_shortest_path(origin_closest.id, destination_closest.id) {
-            None => Ok((
-                origin.haversine(destination),
-                vec![origin.geoloc(), destination.geoloc()].into(),
-                PathType::Direct,
-            )),
-            Some(path) => {
-                let path: Path<Geoloc> = iter::once(origin.geoloc())
-                    .chain(
-                        path.iter()
-                            .filter_map(|id| self.get(*id).map(|node| node.geoloc())),
-                    )
-                    .chain(iter::once(destination.geoloc()))
-                    .collect::<Vec<_>>()
-                    .into();
+        match (self.closest(origin), self.closest(destination)) {
+            (Some(origin_closest), Some(destination_closest)) => {
+                match self.dijsktra_shortest_path(origin_closest.id, destination_closest.id) {
+                    None => direct_path(origin.geoloc(), destination.geoloc()),
+                    Some(path) => {
+                        let path: Path<Geoloc> = iter::once(origin.geoloc())
+                            .chain(
+                                path.iter()
+                                    .filter_map(|id| self.get(*id).map(|node| node.geoloc())),
+                            )
+                            .chain(iter::once(destination.geoloc()))
+                            .collect::<Vec<_>>()
+                            .into();
 
-                Ok((path.length(), path, PathType::ViaWaypoints))
+                        (path.length(), path, PathType::ViaWaypoints)
+                    }
+                }
             }
+            _ => direct_path(origin.geoloc(), destination.geoloc()),
         }
     }
 
@@ -241,7 +241,7 @@ macro_rules! build_geograph_mod {
         pub fn distance(
             origin: &impl Geolocalizable,
             destination: &impl Geolocalizable,
-        ) -> DistanceResult {
+        ) -> ShortestPath {
             GEOGRAPH.distance(origin, destination)
         }
     };

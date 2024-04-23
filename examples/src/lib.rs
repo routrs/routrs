@@ -10,7 +10,7 @@ pub fn calculate_distances_from_first_node(geograph: &Geograph) {
     for node in geograph.iter_nodes() {
         iter += 1;
         let start = Instant::now(); // Start timing
-        let (distance, path, path_type) = geograph.distance(first_node, node).unwrap();
+        let (distance, path, path_type) = geograph.distance(first_node, node);
         let duration = start.elapsed();
         total_time += duration;
         let avg_time = total_time / iter;
