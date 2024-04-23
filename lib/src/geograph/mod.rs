@@ -59,33 +59,6 @@ impl Geograph {
         }
     }
 
-    /// Checks if the graph is connected.
-    pub fn is_connected(&self) -> bool {
-        if self.graph.is_empty() {
-            return false; // An empty graph is technically not connected.
-        }
-
-        let start_node_id = *self.graph.keys().next().unwrap(); // Get the first node's id.
-        let mut visited = HashMap::new();
-        let mut stack = vec![start_node_id];
-
-        while let Some(node_id) = stack.pop() {
-            if let std::collections::hash_map::Entry::Vacant(e) = visited.entry(node_id) {
-                e.insert(true); // Mark this node as visited
-                if let Some(node) = self.graph.get(&node_id) {
-                    for &neighbor_id in node.waypoints.iter() {
-                        if !visited.contains_key(&neighbor_id) {
-                            stack.push(neighbor_id);
-                        }
-                    }
-                }
-            }
-        }
-
-        // Check if we have visited all nodes
-        visited.len() == self.graph.len()
-    }
-
     /// Finds the closest node in the geograph to the given location.
     /// Used to find the entry and exit points for the shortest path calculation.
     fn closest(&self, loc: &impl Geolocalizable) -> Option<&Node> {
@@ -301,15 +274,6 @@ mod tests {
         let nodes: Vec<&Node> = geograph.iter_nodes().collect();
 
         assert_eq!(nodes.len(), 6);
-    }
-
-    #[test]
-    fn test_is_connected() {
-        let mut geograph = geograph_fixture();
-        assert!(geograph.is_connected());
-
-        geograph.add(Node::new(6, (6.0, 6.0), vec![3, 4]));
-        assert!(!geograph.is_connected());
     }
 
     #[test]
