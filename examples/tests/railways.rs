@@ -10,7 +10,7 @@ fn it_reads_railways_geograph() {
 fn it_calculates_railway_distance() {
     let from: Geoloc = (48.8768, 2.3592); // Gare de l'Est, Paris, France
     let to: Geoloc = (43.3032, 5.3842); // Gare de Marseille-Saint-Charles, Marseille, France
-    let (distance, path, path_type) = railways::distance(&from, &to);
+    let (distance, path, path_type) = railways::shortest_path(&from, &to);
 
     assert_eq!(distance, 749.4744344461568);
     assert_eq!(path.len(), 603);

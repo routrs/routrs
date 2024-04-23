@@ -10,7 +10,7 @@ fn it_reads_maritime_geograph() {
 fn it_calculates_maritime_distance() {
     let from: Geoloc = (40.6759, -74.0504); // USNYC
     let to: Geoloc = (41.0067858, 28.9732219); // TRIST
-    let (distance, path, path_type) = maritime::distance(&from, &to);
+    let (distance, path, path_type) = maritime::shortest_path(&from, &to);
 
     assert_eq!(distance, 9224.95741604269);
     assert_eq!(path.len(), 118);

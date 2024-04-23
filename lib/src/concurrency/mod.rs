@@ -19,7 +19,7 @@ pub trait ParallelDistanceCalculator<T: Geolocalizable + Send + Sync> {
 impl<T: Geolocalizable + Send + Sync> ParallelDistanceCalculator<T> for Geograph {
     fn par_distance(&self, legs: &[Leg<T>]) -> Vec<ShortestPath> {
         legs.par_iter()
-            .map(|leg| self.distance(leg.origin(), leg.destination()))
+            .map(|leg| self.shortest_path(leg.origin(), leg.destination()))
             .collect()
     }
 }

@@ -111,18 +111,19 @@ impl Geograph {
     /// - List of geolocations along the path
     /// - PathType indicating if it was a direct path or went through nodes
     ///
-    pub fn distance(
+    pub fn shortest_path(
         &self,
         origin: &impl Geolocalizable,
         destination: &impl Geolocalizable,
     ) -> ShortestPath {
         let direct_path =
-            |o: Geoloc, d: Geoloc| (o.haversine(&d), Path::from(vec![o, d]), PathType::Direct);
+            |o: Geoloc, d| (o.haversine(&d), Path::from(vec![o, d]), PathType::Direct);
 
         match (self.closest(origin), self.closest(destination)) {
             (Some(origin_closest), Some(destination_closest)) => {
-                match self.dijsktra_shortest_path(origin_closest.id, destination_closest.id) {
-                    None => direct_path(origin.geoloc(), destination.geoloc()),
+                let shortest_path = self.dijsktra(origin_closest.id, destination_closest.id);
+
+                match shortest_path {
                     Some(path) => {
                         let path: Path<Geoloc> = iter::once(origin.geoloc())
                             .chain(
@@ -132,11 +133,15 @@ impl Geograph {
                             .chain(iter::once(destination.geoloc()))
                             .collect::<Vec<_>>()
                             .into();
-
                         (path.length(), path, PathType::ViaWaypoints)
                     }
+                    // If no path found, calculate the direct path between the origin and destination.
+                    // This can happen if the destination is not reachable from the origin.
+                    None => direct_path(origin.geoloc(), destination.geoloc()),
                 }
             }
+            // If any of the closest nodes is not found, calculate the direct path
+            // between the origin and destination. Case for empty geographs.
             _ => direct_path(origin.geoloc(), destination.geoloc()),
         }
     }
@@ -169,7 +174,7 @@ impl Geograph {
 
     /// Determines the shortest path between two nodes in the geograph
     /// using Dijsktra's algorithm and the Haversine formula.
-    fn dijsktra_shortest_path(&self, origin: NodeId, destination: NodeId) -> Option<Vec<NodeId>> {
+    fn dijsktra(&self, origin: NodeId, destination: NodeId) -> Option<Vec<NodeId>> {
         let mut queue = BinaryHeap::new();
         let mut distances: HashMap<NodeId, Distance> = HashMap::new();
         let mut previous: HashMap<NodeId, NodeId> = HashMap::new();
@@ -238,11 +243,11 @@ macro_rules! build_geograph_mod {
             &GEOGRAPH
         }
 
-        pub fn distance(
+        pub fn shortest_path(
             origin: &impl Geolocalizable,
             destination: &impl Geolocalizable,
         ) -> ShortestPath {
-            GEOGRAPH.distance(origin, destination)
+            GEOGRAPH.shortest_path(origin, destination)
         }
     };
 }
@@ -322,16 +327,16 @@ mod tests {
     fn test_shortest_path() {
         let geograph = geograph_fixture();
 
-        let path = geograph.dijsktra_shortest_path(0, 5).unwrap();
+        let path = geograph.dijsktra(0, 5).unwrap();
         assert_eq!(path, vec![0, 1, 2, 5]);
 
-        let path = geograph.dijsktra_shortest_path(2, 0).unwrap();
+        let path = geograph.dijsktra(2, 0).unwrap();
         assert_eq!(path, vec![2, 1, 0]);
 
-        let path = geograph.dijsktra_shortest_path(4, 0).unwrap();
+        let path = geograph.dijsktra(4, 0).unwrap();
         assert_eq!(path, vec![4, 1, 0]);
 
-        let path = geograph.dijsktra_shortest_path(5, 0).unwrap();
+        let path = geograph.dijsktra(5, 0).unwrap();
         assert_eq!(path, vec![5, 4, 1, 0]);
     }
 }
