@@ -8,5 +8,5 @@ repository = "https://github.com/deepbludev/routrs"
 documentation = "https://github.com/deepbludev/routrs"
 
 [dependencies]
-routrs = { version = "1.0.0", path = "../lib", features = ["all"] }
+routrs = { version = "2.0.0", path = "../lib", features = ["all"] }
 rayon = "1.5"
