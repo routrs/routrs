@@ -1,2 +1,2 @@
-# routrs_highways
-Highway extension for routrs, the Rust geograph-based shortest distance calculator
+# routrs_maritime
+Maritime dataset for routrs, the geograph-based shortest distance calculator for Rust.

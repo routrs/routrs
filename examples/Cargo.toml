@@ -5,7 +5,6 @@ edition = "2021"
 description = "Examples for routrs"
 license = "MIT"
 repository = "https://github.com/deepbludev/routrs"
-documentation = "https://github.com/deepbludev/routrs"
 
 [dependencies]
 routrs = { version = "2.0.0", path = "../lib", features = ["all"] }
