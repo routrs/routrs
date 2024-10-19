@@ -5,7 +5,8 @@ edition = "2021"
 description = "Railways dataset for routrs, the geograph-based shortest distance calculator for Rust"
 license = "MIT"
 repository = "https://github.com/deepbludev/routrs"
-documentation = "https://github.com/deepbludev/routrs"
+keywords = ["pathfinding", "routing"]
+categories = ["algorithms", "science::geo"]
 
 [dependencies]
 flate2 = "1.0.28"

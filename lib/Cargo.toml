@@ -5,8 +5,9 @@ edition = "2021"
 description = "Geograph-based shortest distance calculation for Rust"
 license = "MIT"
 repository = "https://github.com/deepbludev/routrs"
-documentation = "https://github.com/deepbludev/routrs"
-
+readme = "../README.md"
+keywords = ["pathfinding", "routing"]
+categories = ["algorithms", "science::geo"]
 
 [features]
 default = ["core"]
